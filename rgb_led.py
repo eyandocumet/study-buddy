@@ -1,43 +1,33 @@
-# This file is executed on every boot (including wake-boot from deepsleep)
-# Eyan Documet - 5/6/25
-
-from hcsr04 import HCSR04
-from machine import Pin, PWM
+# Runs on boot - Controls RGB color spectrum of an LED
+# Eyan Documet
+from machine import Pin, PWM, ADC
 from time import sleep
-from math import atan, degrees
 
-# Initialize sensor and servo
-sensor = HCSR04(trigger_pin=26, echo_pin=25, echo_timeout_us=10000)
-servo = PWM(Pin(13), freq=50)
+# Setup RGB PWM
+r = PWM(Pin(14), freq=1000)
+g = PWM(Pin(32), freq=1000)
+b = PWM(Pin(15), freq=1000)
 
-# Global variables / parameters
-bias = 30 # deg -- Added for user comfort
-min_dist = 2 # cm
-max_dist = 50 # cm
-max_angle = 60 # deg
+# Setup ADC for potentiometer
+pot = ADC(Pin(26))
+pot.atten(ADC.ATTN_11DB)  # 0–3.3V range
+pin_in = Pin(12, Pin.IN)
 
-def set_servo_angle(angle_deg):
-    min_duty = 1638
-    max_duty = 8192
-    angle_deg = 90 - angle_deg # For our configuration, this is correct.
-    
-    duty = int((angle_deg / 180) * (max_duty - min_duty) + min_duty) # Interpolate angle to duty.
-    servo.duty_u16(duty)
+def set_color(r_val, g_val, b_val):
+    r.duty(int(r_val))
+    g.duty(int(g_val))
+    b.duty(int(b_val))
 
 while True:
-    distance = sensor.distance_cm()
+    val = pot.read()  # 0–4095
+    ratio = val / 4095
+    print(f"Potentiometer: {val} ({ratio:.2f})")
+        
+    # Interpolate between white (1023,1023,1023) and amber (1023, 300, 0)
+    r_val = 1023 * (1 - pin_in.value())
+    g_val = int(1023 - ratio * (1023 - 300)) * (1 - pin_in.value())
+    b_val = int(1023 - ratio * 1023) * (1 - pin_in.value())
 
-    
-    theta = degrees(atan((8 + distance) / 9.5)) - bias
-    theta = min(theta,max_angle) # Clamped to 45deg
+    set_color(r_val, g_val, b_val)
+    sleep(0.05)
 
-    if (distance >= min_dist) and (distance <= max_dist): # Experimentally found natura minimum of 2cm
-        set_servo_angle(theta)
-        print(f"Distance: {distance:.0f} cm, Servo Angle: {theta:.1f}deg")
-    elif distance > max_dist: # If user has walked away
-        set_servo_angle(0)
-        print(f"Distance: {distance:.0f} cm, Servo set to \"Away\" Mode")
-    else:
-        continue
-    
-    sleep(0.20) # Blocking code for smoothness, otherwise, we'd need a control algo
