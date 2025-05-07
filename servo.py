@@ -15,6 +15,8 @@ bias = 30 # deg -- Added for user comfort
 min_dist = 2 # cm
 max_dist = 50 # cm
 max_angle = 60 # deg
+pin_out = Pin(12, Pin.OUT)
+distance = 0 # cm
 
 def set_servo_angle(angle_deg):
     min_duty = 1638
@@ -26,17 +28,18 @@ def set_servo_angle(angle_deg):
 
 while True:
     distance = sensor.distance_cm()
-
     
     theta = degrees(atan((8 + distance) / 9.5)) - bias
     theta = min(theta,max_angle) # Clamped to 45deg
 
     if (distance >= min_dist) and (distance <= max_dist): # Experimentally found natura minimum of 2cm
         set_servo_angle(theta)
+        pin_out.value(0)
         print(f"Distance: {distance:.0f} cm, Servo Angle: {theta:.1f}deg")
     elif distance > max_dist: # If user has walked away
         set_servo_angle(0)
+        pin_out.value(1)
         print(f"Distance: {distance:.0f} cm, Servo set to \"Away\" Mode")
     else:
         continue
-    sleep(0.20) # Blocking code for smoothness, otherwise, we'd need a control algo
+    sleep(0.25) # Blocking code for smoothness, otherwise, we'd need a control algo
