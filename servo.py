@@ -35,11 +35,13 @@ while True:
     if (distance >= min_dist) and (distance <= max_dist): # Experimentally found natura minimum of 2cm
         set_servo_angle(theta)
         pin_out.value(0)
+        max_dist = 60 # Hysteresis - dynamic threshold
         print(f"Distance: {distance:.0f} cm, Servo Angle: {theta:.1f}deg")
     elif distance > max_dist: # If user has walked away
         set_servo_angle(0)
         pin_out.value(1)
+        max_dist = 40 # Hysteresis - dynamic threshold
         print(f"Distance: {distance:.0f} cm, Servo set to \"Away\" Mode")
     else:
         continue
-    sleep(0.25) # Blocking code for smoothness, otherwise, we'd need a control algo
+    sleep(0.05) # Blocking code for smoothness, otherwise, we'd need a control algo
