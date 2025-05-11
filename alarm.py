@@ -41,16 +41,6 @@ def timer_done():
     print("Time's up! Sending notification and beeping...")
     send_to_broker("report/notification", "Break time!")
 
-    buzzer.freq(1000)
-    for _ in range(10):
-        buzzer.duty(512)
-        time.sleep(0.2)
-        buzzer.duty(0)
-        time.sleep(0.2)
-
-    buzzer.deinit()  # cleanup after beep
-    print("Done beeping")
-
 # Timer countdown
 def start_timer():
     global buzzer
